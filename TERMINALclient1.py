@@ -6,21 +6,21 @@ import sys
 HEADER_LENGTH = 10
 
 IP = "127.0.0.1"
-PORT = 1234
+PORT = 5000
 
 my_username = input("Type in your username: ")
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
-client_socket.connect((IP, PORT))
+client_socket.connect((IP, PORT)) #this socket is just connecting to the socket we already binded as the server.
 
 client_socket.setblocking(False)
 #With this, the receive functionality won't block the whole app.
 
+encoded_username = my_username.encode('utf-8') #encoding
 
-
-encoded_username = my_username.encode('utf-8')
 username_header = f"{len(encoded_username):< {HEADER_LENGTH}}".encode('utf-8')
+# print(username_header)
 
 client_socket.send(username_header + encoded_username)
 
@@ -39,13 +39,17 @@ while True:
             if not len(username_header):
                 print("Connection closed by the server")
                 sys.exit()
-            
+            print(username_header)
             username_length = int(username_header.decode('utf-8').strip())
             username = client_socket.recv(username_length).decode('utf-8')
+            print("username: ", username)
 
             message_header = client_socket.recv(HEADER_LENGTH)
+            print("Header:", message_header)
             message_length = int(message_header.decode('utf-8').strip())
+            print("Length: ", message_length)
             message = client_socket.recv(message_length).decode('utf-8')
+            print("message:", message)
 
             print(f"{username}> {message}")
     

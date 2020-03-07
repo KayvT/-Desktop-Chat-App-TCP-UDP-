@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtCore, QtGui, QtWidgets
- 
-class Ui_appWindow(object):
-    def setupUi(self, appWindow):
+import threading
+import socket
+import errno
+import select
+import sys
+class Ui_appWindow():
+    # def setupUi(self, appWindow):
+    def __init__(self):
         appWindow.setObjectName("appWindow")
         appWindow.resize(686, 468)
         appWindow.setMinimumSize(QtCore.QSize(686, 468))
@@ -72,7 +77,7 @@ class Ui_appWindow(object):
         self.line_4.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_4.setObjectName("line_4")
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(550, 70, 91, 17))
+        self.label.setGeometry(QtCore.QRect(542, 130, 121, 17))
         self.label.setObjectName("label")
         self.line_5 = QtWidgets.QFrame(self.centralwidget)
         self.line_5.setGeometry(QtCore.QRect(670, 40, 20, 291))
@@ -80,16 +85,16 @@ class Ui_appWindow(object):
         self.line_5.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_5.setObjectName("line_5")
         self.connectBTN = QtWidgets.QPushButton(self.centralwidget)
-        self.connectBTN.setGeometry(QtCore.QRect(530, 210, 131, 21))
+        self.connectBTN.setGeometry(QtCore.QRect(530, 260, 131, 21))
         self.connectBTN.setObjectName("connectBTN")
         self.connectBTN.clicked.connect(self.connect)
         self.load_bar = QtWidgets.QProgressBar(self.centralwidget)
-        self.load_bar.setGeometry(QtCore.QRect(530, 250, 131, 10))
+        self.load_bar.setGeometry(QtCore.QRect(520, 300, 151, 16))
         self.load_bar.setProperty("value", 0)
         self.load_bar.setTextVisible(False)
         self.load_bar.setObjectName("load_bar")
         self.widget = QtWidgets.QWidget(self.centralwidget)
-        self.widget.setGeometry(QtCore.QRect(520, 100, 150, 50))
+        self.widget.setGeometry(QtCore.QRect(520, 150, 150, 81))
         self.widget.setObjectName("widget")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.widget)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -104,7 +109,7 @@ class Ui_appWindow(object):
         self.label_2.setObjectName("label_2")
         self.verticalLayout_2.addWidget(self.label_2)
         self.widget1 = QtWidgets.QWidget(self.centralwidget)
-        self.widget1.setGeometry(QtCore.QRect(540, 160, 116, 25))
+        self.widget1.setGeometry(QtCore.QRect(540, 220, 116, 25))
         self.widget1.setObjectName("widget1")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.widget1)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
@@ -139,8 +144,16 @@ class Ui_appWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menu_About.menuAction())
 
+        self.NameInput_area = QtWidgets.QLineEdit(self.centralwidget)
+        self.NameInput_area.setGeometry(QtCore.QRect(520, 80, 148, 25))
+        self.NameInput_area.setObjectName("NameInput_area")
+        self.nameLabel = QtWidgets.QLabel(self.centralwidget)
+        self.nameLabel.setGeometry(QtCore.QRect(530, 60, 131, 17))
+        self.nameLabel.setObjectName("nameLabel")
+        appWindow.show()
         self.retranslateUi(appWindow)
         QtCore.QMetaObject.connectSlotsByName(appWindow)
+
 
     def retranslateUi(self, appWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -151,10 +164,11 @@ class Ui_appWindow(object):
         self.input_area.setPlaceholderText(_translate("appWindow", "Type your message here!"))
         self.chat_label.setText(_translate("appWindow", "CHAT ROOM"))
         self.room_label.setText(_translate("appWindow", "OPTIONS"))
-        self.label.setText(_translate("appWindow", "Host Address:"))
+        self.label.setText(_translate("appWindow", "HOST ADDRESS"))
         self.connectBTN.setText(_translate("appWindow", "CONNECT"))
-        self.load_bar.setStatusTip(_translate("appWindow", "Loading bar: will start loading when you click enter"))
+        self.load_bar.setStatusTip(_translate("appWindow", "Loading bar: will start loading when you click connect"))
         self.label_2.setText(_translate("appWindow", "PICK THE PROTOCOL:"))
+        self.nameLabel.setText(_translate("appWindow", "YOUR USERNAME"))
         self.TCPcheckBox.setText(_translate("appWindow", "TCP"))
         self.UDPcheckBox.setText(_translate("appWindow", "UDP"))
         self.menuFile.setTitle(_translate("appWindow", "&File"))
@@ -162,21 +176,143 @@ class Ui_appWindow(object):
         self.actionExit.setText(_translate("appWindow", "&Exit"))
         self.actionHome.setText(_translate("appWindow", "&Home"))
         self.actionAboutUS.setText(_translate("appWindow", "&US"))
+        appWindow.setWindowTitle("Reach ChatApp")
+
 
     def connect(self):
-        self.completed = 0
-        while self.completed < 100:
-            self.completed += 0.0001
-            self.load_bar.setValue(self.completed)
+        
+        #to make sure the user is not just clicking connect without typing in info.
+        while self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True and not self.IpInput_area or not self.NameInput_area:
+            pop_up_msg = QtWidgets.QMessageBox()
+            pop_up_msg.setWindowTitle("Come on, really? like, really?")
+            pop_up_msg.setText("You cannot do that. You have to enter a name, an Ip, and check one of the protocols.")
+            pop_up_msg.setIcon(QtWidgets.QMessageBox.Warning)
+            pop_up_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            pop_up_msg.exec_()
+            if pop_up_msg.buttonClicked:
+                break
+        else:
+           
+            if self.TCPcheckBox.isChecked():
+                checked = self.TCPcheckBox
+            else:
+                checked = self.UDPcheckBox
+                # i do not need to check if atleast one of them is checked already because I have already done that in the while loop.
+            self.load_bar.setTextVisible(True)
+            self.completed = 0
+            while self.completed < 100:
+                self.completed += 0.00015
+                self.load_bar.setValue(self.completed)
+            #getting the values:
+            hostIp = self.IpInput_area.text()
+            hostName = self.NameInput_area.text()
+            # the following lines are to make sure the user does not crash the application by changing his optins and clicking connect again.
+            self.connectBTN.setDisabled(True)
+            self.TCPcheckBox.setDisabled(True)
+            self.UDPcheckBox.setDisabled(True)
+            self.IpInput_area.clear()
+            self.IpInput_area.setReadOnly(True)
+            self.NameInput_area.clear()
+            self.NameInput_area.setReadOnly(True)
+            self.load_bar.setValue(0)
+            self.load_bar.setTextVisible(False)
+            #actually connecting is done here
+            self.client = Client(hostName, hostIp, checked)
+
             
+
+class Client():
+    HEADER_LENGTH = 10
+    # self.Gui = Ui_appWindow()
+    def __init__(self, name, ip, checkbox):
+        self.requestedIp = ip
+        self.user_name = name
+        # print(self.user_name, "wee")
+        self.checkboxState = checkbox
+        self.PORT = 5000
+        if self.checkboxState.text() == "TCP":
+            # threading._start_new_thread(self.TCPserverInit, (self.requestedIp, ' '))
+            self.TCPserverInit(self.requestedIp, 4)
+        else:
+            #UDP CODE HERE
+            # THE THREAD IS IMPORTANT BECAUSE THE UI FREEZES WITHOUT IT. (I THINK)
+            pass
+        
+    def TCPserverInit(self, ip, var_):
+        # self.my_username = input("Type in your username: ")
+        self.TCPclientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.TCPclientSocket.connect((ip, self.PORT))
+        self.TCPclientSocket.setblocking(False)
+        self.encoded_username = self.user_name.encode('utf-8')
+        self.username_header = f"{len(self.encoded_username):<{self.HEADER_LENGTH}}".encode('utf-8')
+        
+        self.TCPclientSocket.send(self.username_header + self.encoded_username)
+        welcome_ = f"You are connected, {self.user_name}! Start Messaging!! \n -Reach Chat App Assistant \n ---------------------------------------------------------------\n"
+        ui.chat_window.insertPlainText(welcome_)
+        ui.sendBTN.clicked.connect(self.sendBTN_handle)
+    
+    def sendBTN_handle(self):        
+        self.TCPcommunicate_msgs(self.TCPclientSocket, ' ')
+
+    def TCPcommunicate_msgs(self, sock, var_):
+        # self.message = input(f"{self.my_username}>>")
+        self.unEncodedMessage = ui.input_area.text()
+        # print(self.message)
+        if self.unEncodedMessage:
+            self.message = self.unEncodedMessage.encode('utf-8')
+            self.message_header = f"{len(self.message):<{self.HEADER_LENGTH}}".encode('utf-8')
+            sock.send(self.message_header + self.message)
+            own_chat_text = self.user_name + ">>" + self.unEncodedMessage
+            ui.chat_window.insertPlainText(own_chat_text)
+            ui.chat_window.insertPlainText("\n")
+
+        try:
+            #this is where I receive things
+            while True:
+                # FOR USERNAME
+                self.otherUserNamesHeader = sock.recv(self.HEADER_LENGTH)
+                # print(self.otherUserNamesHeader)
+                if not len(self.otherUserNamesHeader):
+                    ui.chat_window.insertPlainText("connection closed by the server")
+                    sys.exit()
+
+                self.otherUserNamesLength = int(self.otherUserNamesHeader.decode('utf-8').strip())
+
+                self.otherUserName_s = sock.recv(self.HEADER_LENGTH)
+
+                # FOR ACTUAL MESSAGE
+                self.message_header = sock.recv(self.HEADER_LENGTH)
+                print(self.message_header)
+                print("Header:", self.message_header)
+                self.message_length = int(self.message_header.decode('utf-8').strip())
+                print("Length: ", self.message_length)
+                self.message = sock.recv(self.message_length).decode('utf-8')
+                print("message:", self.message)
+                recvd_msg = f"{self.otherUserName_s}>> {self.message}"
+                ui.chat_window.insertPlainText(recvd_msg)
+
+        except IOError as e:
+            if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
+                print('Reading error: ', str(e))
+                sys.exit()
+            # continue
+        except Exception as e:
+            print('General Error: ', str(e))
+            sys.exit()
+
+
+
+
 
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
+    # app.setWindowTitle("Reach ChatApp")
     appWindow = QtWidgets.QMainWindow()
     ui = Ui_appWindow()
-    ui.setupUi(appWindow)
-    appWindow.show()
+
+    # ui.setupUi(appWindow)
+    # appWindow.show()
     sys.exit(app.exec_())
 
