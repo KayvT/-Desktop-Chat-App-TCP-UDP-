@@ -204,6 +204,7 @@ class Ui_appWindow(QThread):
                 checked = self.TCPcheckBox
             else:
                 checked = self.UDPcheckBox
+                print('UDP connection')
                 # i do not need to check if atleast one of them is checked already because I have already done that in the while loop.
             self.load_bar.setTextVisible(True)
             self.completed = 0
@@ -224,10 +225,11 @@ class Ui_appWindow(QThread):
             self.load_bar.setValue(0)
             self.load_bar.setTextVisible(False)
             #actually connecting is done here
+            #### changes #####
             self.client = Client(hostName, hostIp, checked)
             self.client.startConnection()
-            self.client.start()
-            self.client.trigger.connect(self.connect_slots)
+            self.client.start() # starting the threads
+            self.client.trigger.connect(self.connect_slots) # connecting to the signal of the client
 
     def connect_slots(self, receivedMessage):
     
@@ -255,8 +257,7 @@ class Client(QThread):
             self.TCPserverInit(self.requestedIp, 4)
         else:
             #UDP CODE HERE
-            # THE THREAD IS IMPORTANT BECAUSE THE UI FREEZES WITHOUT IT. (I THINK)
-            pass
+            print('UDP connection')
         
     def TCPserverInit(self, ip, var_):
         # self.my_username = input("Type in your username: ")
@@ -268,9 +269,6 @@ class Client(QThread):
         
         self.TCPclientSocket.send(self.username_header + self.encoded_username)
         welcome_ = f"You are connected, {self.user_name}! Start Messaging!! \n -Reach Chat App Assistant \n ---------------------------------------------------------------\n"
-
-   
-
 
         ui.chat_window.insertPlainText(welcome_)
         ui.sendBTN.clicked.connect(self.sendBTN_handle)
