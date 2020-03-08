@@ -1,7 +1,7 @@
 import socket
 import select
 
-HEADER_LENGTH = 50
+HEADER_LENGTH = 10
 
 IP = "127.0.0.1"
 PORT = 5000
@@ -39,14 +39,13 @@ while True:
     for notified_socket in read_sockets:
         if notified_socket == server_socket:
             client_socket, client_address = server_socket.accept()
-            print(client_socket, client_address)
+            # print(client_socket, client_address)
 
             user = recv_message(client_socket)
             if user is False:
                 continue
             sockets_list.append(client_socket)
             clients[client_socket] = user
-
             print(f"accepted new connection from {client_address}:{client_address[1]} username: {user['data'].decode('utf-8')}")
         else:
             message_ = recv_message(notified_socket)
@@ -55,14 +54,13 @@ while True:
                 sockets_list.remove(notified_socket)
                 del clients[notified_socket]
                 continue
-
             user = clients[notified_socket]
             print(f"Recevied Message from {user['data'].decode('utf-8')}: {message_['data'].decode('utf-8')}")
 
+            # print(f"all clients{clients}")
             for client_socket in clients:
                 if client_socket != notified_socket:
                     client_socket.send(user['header'] + user['data'] + message_['header'] + message_['data'])
-                    
     for notified_socket in exception_sockets:
         sockets_list.remove(notified_socket)
         del clients[notified_socket]

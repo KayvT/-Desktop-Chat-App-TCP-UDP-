@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+# from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -10,10 +10,12 @@ import errno
 import select
 import sys
 
-class Ui_appWindow():
-    # def setupUi(self, appWindow):
-    def __init__(self):
+class Ui_appWindow(QThread):
 
+    def __init__(self):
+        super(Ui_appWindow, self).__init__()
+        self.uiElements()
+    def uiElements(self):
         appWindow.setObjectName("appWindow")
         appWindow.resize(686, 468)
         appWindow.setMinimumSize(QtCore.QSize(686, 468))
@@ -48,9 +50,6 @@ class Ui_appWindow():
         self.input_area.setCursorMoveStyle(QtCore.Qt.LogicalMoveStyle)
         self.input_area.setClearButtonEnabled(False)
         self.input_area.setObjectName("input_area")
-
- 
-
 
         self.line_2 = QtWidgets.QFrame(self.centralwidget)
         self.line_2.setGeometry(QtCore.QRect(11, 320, 671, 20))
@@ -227,20 +226,26 @@ class Ui_appWindow():
             #actually connecting is done here
             self.client = Client(hostName, hostIp, checked)
             self.client.startConnection()
+            self.client.start()
+            self.client.trigger.connect(self.connect_slots)
 
-    def connect_slots(self, sender):
-        self.connect(sender, QtCore.SIGNAL('testsignal'), self.say_hello)
+    def connect_slots(self, receivedMessage):
+    
+        ui.chat_window.insertPlainText(receivedMessage)
+        ui.chat_window.insertPlainText("\n")
+        ui.chat_window.repaint()
 
-    def say_hello(self):
-        print('listener: received signal')
-
-class Client():
+class Client(QThread):
+    """ signal the client uses to send the received message
+        to the GUI then, the GUI inserts the message 
+    """
+    trigger = pyqtSignal(str) 
     HEADER_LENGTH = 10
     # self.Gui = Ui_appWindow()
     def __init__(self, name, ip, checkbox):
+        super(Client, self).__init__()
         self.requestedIp = ip
         self.user_name = name
-        # print(self.user_name, "wee")
         self.checkboxState = checkbox
         self.PORT = 5000
     
@@ -264,8 +269,9 @@ class Client():
         self.TCPclientSocket.send(self.username_header + self.encoded_username)
         welcome_ = f"You are connected, {self.user_name}! Start Messaging!! \n -Reach Chat App Assistant \n ---------------------------------------------------------------\n"
 
-        thread = Thread(target = self.run)
-        thread.start()
+   
+
+
         ui.chat_window.insertPlainText(welcome_)
         ui.sendBTN.clicked.connect(self.sendBTN_handle)
         
@@ -278,12 +284,8 @@ class Client():
         ###########################
 
     def run(self):
-        k = 1
-        while k != 0:
-            # print('hi')
-        # print('hi')
-        # while True: 
-            k = self.receiveMessage(self.TCPclientSocket)
+        while True:
+            self.receiveMessage(self.TCPclientSocket)
 
     def sendBTN_handle(self):        
         self.TCPcommunicate_msgs(self.TCPclientSocket, ' ')
@@ -294,9 +296,7 @@ class Client():
 
 
     def TCPcommunicate_msgs(self, sock, var_):
-        # self.message = input(f"{self.my_username}>>")
         self.unEncodedMessage = ui.input_area.text()
-        # print(self.message)
         if self.unEncodedMessage:
             self.message = self.unEncodedMessage.encode('utf-8')
             self.message_header = f"{len(self.message):<{self.HEADER_LENGTH}}".encode('utf-8')
@@ -320,12 +320,10 @@ class Client():
         try:
         #this is where I receive things
             # FOR USERNAME
-            print('$$Not passing')
             self.otherUserNamesHeader = sock.recv(self.HEADER_LENGTH)
             if not len(self.otherUserNamesHeader):
                 ui.chat_window.insertPlainText("connection closed by the server")
                 sys.exit()
-            print('Passing$$') 
             self.otherUserNamesLength = int(self.otherUserNamesHeader.decode('utf-8').strip())
 
             #######  My changes  ########
@@ -336,15 +334,8 @@ class Client():
             message = sock.recv(lengthOfMessage)  # reading the message using the length(header) of it
             recvd_msg = f"{self.otherUserName_s.decode('utf-8').strip()}>> {message.decode('utf-8').strip()}"
             
-            print(recvd_msg)
-            
-            self.emit(QtCore.SIGNAL('testsignal'))
-            # ui.chat_window.insertPlainText(recvd_msg)
-            return 0
-            # ui.chat_window.insertPlainText("\n")
-
-            """ repainting the widget after appending text to it """
-            # ui.chat_window.repaint()
+            self.trigger.emit(recvd_msg)
+         
 
             #########################
         except IOError as e:
@@ -356,14 +347,15 @@ class Client():
             print('General Error: ', str(e))
             sys.exit()
 
+  
+
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     # app.setWindowTitle("Reach ChatApp")
     appWindow = QtWidgets.QMainWindow()
     ui = Ui_appWindow()
-
-    # ui.setupUi(appWindow)
-    # appWindow.show()
+    ui.start()
     sys.exit(app.exec_())
 
