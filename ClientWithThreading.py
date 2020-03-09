@@ -9,6 +9,7 @@ import socket
 import errno
 import select
 import sys
+from soundwindow import Ui_MainWindow
 
 class Ui_appWindow(QThread):
 
@@ -34,9 +35,9 @@ class Ui_appWindow(QThread):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.emojiBTN = QtWidgets.QPushButton(self.verticalLayoutWidget)
-        self.emojiBTN.setObjectName("emojiBTN")
-        self.verticalLayout.addWidget(self.emojiBTN)
+        self.soundBTN = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.soundBTN.setObjectName("soundBTN")
+        self.verticalLayout.addWidget(self.soundBTN)
         self.sendFileBTN = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.sendFileBTN.setObjectName("sendFileBTN")
         self.verticalLayout.addWidget(self.sendFileBTN)
@@ -162,11 +163,15 @@ class Ui_appWindow(QThread):
         self.retranslateUi(appWindow)
         QtCore.QMetaObject.connectSlotsByName(appWindow)
 
+        # TRIGGERS:
+        self.soundBTN.clicked.connect(self.open_sound_window)
+        self.sendFileBTN.clicked.connect(self.open_fileDialog)
+
     def retranslateUi(self, appWindow):
         _translate = QtCore.QCoreApplication.translate
         appWindow.setWindowTitle(_translate("appWindow", "MainWindow"))
-        self.emojiBTN.setText(_translate("appWindow", "EMOJI"))
-        self.sendFileBTN.setText(_translate("appWindow", "ATTACH A FILE"))
+        self.soundBTN.setText(_translate("appWindow", "SOUND"))
+        self.sendFileBTN.setText(_translate("appWindow", "BROWSE"))
         self.sendBTN.setText(_translate("appWindow", "SEND"))
         self.input_area.setPlaceholderText(_translate("appWindow", "Type your message here!"))
         self.chat_label.setText(_translate("appWindow", "CHAT ROOM"))
@@ -185,13 +190,18 @@ class Ui_appWindow(QThread):
         self.actionAboutUS.setText(_translate("appWindow", "&US"))
         appWindow.setWindowTitle("Reach ChatApp")
 
+    def open_sound_window(self):
+        self.window = QtWidgets.QMainWindow()
+        self.soundUI = Ui_MainWindow()
+        self.soundUI.setupUi(self.window)
+        self.window.show()
 
     def connect(self):
         
         #to make sure the user is not just clicking connect without typing in info.
-        while self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True and not self.IpInput_area or not self.NameInput_area:
+        while not self.IpInput_area.text() or not self.NameInput_area.text() and self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True:
             pop_up_msg = QtWidgets.QMessageBox()
-            pop_up_msg.setWindowTitle("Come on, really? like, really?")
+            pop_up_msg.setWindowTitle("Come on, really?")
             pop_up_msg.setText("You cannot do that. You have to enter a name, an Ip, and check one of the protocols.")
             pop_up_msg.setIcon(QtWidgets.QMessageBox.Warning)
             pop_up_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
@@ -199,12 +209,13 @@ class Ui_appWindow(QThread):
             if pop_up_msg.buttonClicked:
                 break
         else:
-           
             if self.TCPcheckBox.isChecked():
                 checked = self.TCPcheckBox
+                print("whoop, TCP connection!")
             else:
                 checked = self.UDPcheckBox
                 print('UDP connection')
+                quit()
                 # i do not need to check if atleast one of them is checked already because I have already done that in the while loop.
             self.load_bar.setTextVisible(True)
             self.completed = 0
@@ -236,6 +247,9 @@ class Ui_appWindow(QThread):
         ui.chat_window.insertPlainText(receivedMessage)
         ui.chat_window.insertPlainText("\n")
         ui.chat_window.repaint()
+
+    def open_fileDialog(self):
+        name, _ = QFileDialog.getOpenFileName(appWindow, "Open File", options=QFileDialog.DontUseNativeDialog)
 
 class Client(QThread):
     """ signal the client uses to send the received message
