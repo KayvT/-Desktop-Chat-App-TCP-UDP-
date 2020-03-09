@@ -199,9 +199,12 @@ class Ui_appWindow(QThread):
         self.soundUI = Ui_MainWindow()
         self.soundUI.setupUi(self.window)
         self.window.show()
+        self.soundUI.trigger.connect(self.soundButtonClicked)
 
-    def connect(self):
+    def soundButtonClicked(self, clickedButton):
+        print(f'Id of the clicked sound button: {clickedButton}')
         
+    def connect(self):
         #to make sure the user is not just clicking connect without typing in info.
         while (not self.IpInput_area.text() and not self.NameInput_area.text()) and (self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True):
             pop_up_msg = QtWidgets.QMessageBox()
@@ -341,11 +344,10 @@ class Client(QThread):
           
         if self.checkboxState.text() == "TCP":      
             self.TCPcommunicate_msgs(self.TCPclientSocket, ' ')
-        else: 
+        elif self.checkboxState.text() == "UDP":      
             self.udpSending()
         ui.input_area.clear()
         ui.chat_window.repaint()
-
 
     def udpSending(self):
         self.unEncodedMessage = ui.input_area.text()
@@ -379,7 +381,6 @@ class Client(QThread):
 
     def receiveMessageUDP(self):
         msgFromServer = self.UDPClientSocket.recvfrom(self.bufferSize)
-        print(msgFromServer)
         decodedMessage = msgFromServer[0].decode('utf-8')
         if len(decodedMessage.strip()) > 0:
             self.trigger.emit(decodedMessage)
