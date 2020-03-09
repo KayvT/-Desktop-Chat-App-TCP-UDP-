@@ -218,6 +218,7 @@ class Ui_appWindow(QThread):
                 print("whoop, TCP connection!")
             else:
                 checked = self.UDPcheckBox
+
                 print('UDP connection')
                 # quit()
                 # i do not need to check if atleast one of them is checked already because I have already done that in the while loop.
@@ -279,7 +280,33 @@ class Client(QThread):
             self.TCPserverInit(self.requestedIp, 4)
         else:
             #UDP CODE HERE
-            print('UDP connection')
+            self.UDPserverInit()
+
+    def UDPserverInit(self):
+
+        #TODO may send the names first here
+        self.serverAddressPort = ("127.0.0.1", 20001)
+        self.bufferSize = 1024
+        # Create a UDP socket at client side
+        self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+
+        #send names first 
+        self.UDPClientSocket.sendto(str.encode(self.user_name), self.serverAddressPort)
+
+
+        welcome_ = f"You are connected, {self.user_name}! Start Messaging!! \n -Reach Chat App Assistant \n ---------------------------------------------------------------\n"
+        ui.chat_window.insertPlainText(welcome_)
+        ui.sendBTN.clicked.connect(self.sendBTN_handle)
+        
+        #######  My changes  ########
+        """ send message when enter is pressed """ 
+        ui.input_area.returnPressed.connect(self.sendBTN_handle)
+
+        ui.chat_window.repaint()
+
+        ###########################
+
+    
         
     def TCPserverInit(self, ip, var_):
         # self.my_username = input("Type in your username: ")
@@ -304,17 +331,31 @@ class Client(QThread):
         ###########################
 
     def run(self):
-        while True:
-            self.receiveMessage(self.TCPclientSocket)
-
-    def sendBTN_handle(self):        
-        self.TCPcommunicate_msgs(self.TCPclientSocket, ' ')
-
-        ### MyChanges ###
+        if self.checkboxState.text() == "TCP":
+            while True:
+                self.receiveMessage(self.TCPclientSocket)
+        else: 
+            while True: 
+                self.receiveMessageUDP()
+    def sendBTN_handle(self):
+          
+        if self.checkboxState.text() == "TCP":      
+            self.TCPcommunicate_msgs(self.TCPclientSocket, ' ')
+        else: 
+            self.udpSending()
         ui.input_area.clear()
-        ################
+        ui.chat_window.repaint()
 
 
+    def udpSending(self):
+        self.unEncodedMessage = ui.input_area.text()
+        if self.unEncodedMessage:
+            self.message = self.unEncodedMessage.encode('utf-8')
+            self.UDPClientSocket.sendto(self.message, self.serverAddressPort)
+            own_chat_text = self.user_name + ">>" + self.unEncodedMessage
+            ui.chat_window.insertPlainText(own_chat_text)
+            ui.chat_window.insertPlainText("\n")
+            ui.chat_window.repaint()
     def TCPcommunicate_msgs(self, sock, var_):
         self.unEncodedMessage = ui.input_area.text()
         if self.unEncodedMessage:
@@ -335,6 +376,13 @@ class Client(QThread):
        
         # self.receiveMessage(sock) # receive messages from the server of the other clients
         
+
+    def receiveMessageUDP(self):
+        msgFromServer = self.UDPClientSocket.recvfrom(self.bufferSize)
+        print(msgFromServer)
+        decodedMessage = msgFromServer[0].decode('utf-8')
+        if len(decodedMessage.strip()) > 0:
+            self.trigger.emit(decodedMessage)
 
     def receiveMessage(self, sock):
         try:
