@@ -189,6 +189,10 @@ class Ui_appWindow(QThread):
         self.actionHome.setText(_translate("appWindow", "&Home"))
         self.actionAboutUS.setText(_translate("appWindow", "&US"))
         appWindow.setWindowTitle("Reach ChatApp")
+        self.sendBTN.setDisabled(True)
+        self.soundBTN.setDisabled(True)
+        self.sendFileBTN.setDisabled(True)
+        self.input_area.setReadOnly(True)
 
     def open_sound_window(self):
         self.window = QtWidgets.QMainWindow()
@@ -199,7 +203,7 @@ class Ui_appWindow(QThread):
     def connect(self):
         
         #to make sure the user is not just clicking connect without typing in info.
-        while not self.IpInput_area.text() or not self.NameInput_area.text() and self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True:
+        while (not self.IpInput_area.text() or not self.NameInput_area.text()) and (not self.TCPcheckBox.isChecked() or not self.UDPcheckBox.isChecked()):
             pop_up_msg = QtWidgets.QMessageBox()
             pop_up_msg.setWindowTitle("Come on, really?")
             pop_up_msg.setText("You cannot do that. You have to enter a name, an Ip, and check one of the protocols.")
@@ -227,8 +231,12 @@ class Ui_appWindow(QThread):
             hostName = self.NameInput_area.text()
             # the following lines are to make sure the user does not crash the application by changing his optins and clicking connect again.
             self.connectBTN.setDisabled(True)
+            self.sendBTN.setDisabled(False)
+            self.soundBTN.setDisabled(False)
+            self.sendFileBTN.setDisabled(False)
             self.TCPcheckBox.setDisabled(True)
             self.UDPcheckBox.setDisabled(True)
+            self.input_area.setReadOnly(False)
             self.IpInput_area.clear()
             self.IpInput_area.setReadOnly(True)
             self.NameInput_area.clear()
