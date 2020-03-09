@@ -203,7 +203,7 @@ class Ui_appWindow(QThread):
     def connect(self):
         
         #to make sure the user is not just clicking connect without typing in info.
-        while (not self.IpInput_area.text() or not self.NameInput_area.text()) and (not self.TCPcheckBox.isChecked() or not self.UDPcheckBox.isChecked()):
+        while (not self.IpInput_area.text() and not self.NameInput_area.text()) and (self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True):
             pop_up_msg = QtWidgets.QMessageBox()
             pop_up_msg.setWindowTitle("Come on, really?")
             pop_up_msg.setText("You cannot do that. You have to enter a name, an Ip, and check one of the protocols.")
@@ -219,7 +219,7 @@ class Ui_appWindow(QThread):
             else:
                 checked = self.UDPcheckBox
                 print('UDP connection')
-                quit()
+                # quit()
                 # i do not need to check if atleast one of them is checked already because I have already done that in the while loop.
             self.load_bar.setTextVisible(True)
             self.completed = 0
