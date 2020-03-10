@@ -206,7 +206,7 @@ class Ui_appWindow(QThread):
         self.soundUI.trigger.connect(self.soundButtonClicked)
 
     def soundButtonClicked(self, clickedButton):
-        self.serverAddressPort = ("127.0.0.1", 20001)
+        self.serverAddressPort = ("10.52.3.25", 20001)
         self.bufferSize = 1024
         soundMessage = '$ou#+'
         message = (soundMessage + ' ' + str(clickedButton)).encode('utf-8')
@@ -309,7 +309,7 @@ class Client(QThread):
     def UDPserverInit(self):
 
         #TODO may send the names first here
-        self.serverAddressPort = ("127.0.0.1", 20001)
+        self.serverAddressPort = ("10.52.3.25", 20001)
         self.bufferSize = 1024
         # Create a UDP socket at client side
         self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
