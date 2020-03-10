@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 # from PyQt5.QtCore import QObject, pyqtSignal
+from playsound import playsound
+import os
+
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -202,6 +206,13 @@ class Ui_appWindow(QThread):
         self.soundUI.trigger.connect(self.soundButtonClicked)
 
     def soundButtonClicked(self, clickedButton):
+        self.serverAddressPort = ("127.0.0.1", 20001)
+        self.bufferSize = 1024
+        soundMessage = '$ou#+'
+        message = (soundMessage + ' ' + str(clickedButton)).encode('utf-8')
+        # self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        self.client.UDPClientSocket.sendto(message, self.serverAddressPort)
+        # self.UDPClientSocket.sendto(message, self.serverAddressPort)
         print(f'Id of the clicked sound button: {clickedButton}')
         
     def connect(self):
@@ -255,10 +266,17 @@ class Ui_appWindow(QThread):
             self.client.trigger.connect(self.connect_slots) # connecting to the signal of the client
 
     def connect_slots(self, receivedMessage):
-    
+        
+        if '$ou#+' in receivedMessage:
+            soundNumber = receivedMessage.split(' ')[-1]
+            receivedMessage = f'Sound number {soundNumber} was played!!'
         ui.chat_window.insertPlainText(receivedMessage)
         ui.chat_window.insertPlainText("\n")
         ui.chat_window.repaint()
+        soundFile = os.path.join(os.getcwd(), f'SOUNDS/{soundNumber}.mp3')
+        playsound(soundFile)
+
+
 
     def open_fileDialog(self):
         name, _ = QFileDialog.getOpenFileName(appWindow, "Open File", options=QFileDialog.DontUseNativeDialog)
@@ -293,7 +311,7 @@ class Client(QThread):
         # Create a UDP socket at client side
         self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
-        #send names first 
+        #send names first (to be added to clients list)
         self.UDPClientSocket.sendto(str.encode(self.user_name), self.serverAddressPort)
 
 

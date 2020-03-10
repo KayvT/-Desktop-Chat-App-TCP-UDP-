@@ -45,7 +45,12 @@ while(True):
     # message
     address = bytesAddressPair[1]
 
-    #TODO  append only if they are not in the list
+    # if message.decode('utf-8').startswith('$ou#+'):
+        # print(message)
+        # continue
+    
+
+
     exists = False
     for c in clients: 
         if c[1] == address[1]:
@@ -69,3 +74,4 @@ while(True):
     for c in clients:
         if c[1] != address[1]:
             UDPServerSocket.sendto(name + b'>>' + message, c)
+
