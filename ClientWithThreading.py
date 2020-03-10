@@ -267,14 +267,17 @@ class Ui_appWindow(QThread):
 
     def connect_slots(self, receivedMessage):
         
+        playSound = False
         if '$ou#+' in receivedMessage:
             soundNumber = receivedMessage.split(' ')[-1]
             receivedMessage = f'Sound number {soundNumber} was played!!'
+            playSound = True
         ui.chat_window.insertPlainText(receivedMessage)
         ui.chat_window.insertPlainText("\n")
         ui.chat_window.repaint()
-        soundFile = os.path.join(os.getcwd(), f'SOUNDS/{soundNumber}.mp3')
-        playsound(soundFile)
+        if playSound: 
+            soundFile = os.path.join(os.getcwd(), f'SOUNDS/{soundNumber}.mp3')
+            playsound(soundFile)
 
 
 
