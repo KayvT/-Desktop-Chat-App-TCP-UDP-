@@ -23,8 +23,16 @@ sockets_list = [server_socket] #since we already have the server socket as a soc
 clients = {} #this is just to be able to print the user names and stuff in a better way so we will have the socket as a key and the user data as a value.
 
 def recv_message(client_socket):
+    
+    # soundMessage = client_socket.recv().decode('utf-8')
+    # if '$ou#+' in soundMessage:
+    #     print(soundMessage, 'Break it is a sound!!!!!')
+    #     return 
     try:
         message_header = client_socket.recv(HEADER_LENGTH)
+        if '$ou#+' in message_header.decode('utf-8'):
+            return ('sound', message_header)
+        
         if not len(message_header):
             return False
         message_length = int(message_header.decode("utf-8").strip())
@@ -49,18 +57,25 @@ while True:
             print(f"accepted new connection from {client_address}:{client_address[1]} username: {user['data'].decode('utf-8')}")
         else:
             message_ = recv_message(notified_socket)
-            if message_ is False:
+            soundMessage = False 
+            if type(message_) == tuple and message_[0] == 'sound':
+                soundMessage = True
+                print('here send the clients the sound')
+            elif message_ is False:
                 print(f"Closed connection from {clients[notified_socket]['data'].decode('utf-8')}")
                 sockets_list.remove(notified_socket)
                 del clients[notified_socket]
                 continue
             user = clients[notified_socket]
-            print(f"Recevied Message from {user['data'].decode('utf-8')}: {message_['data'].decode('utf-8')}")
-
+            # print(f"Recevied Message from {user['data'].decode('utf-8')}: {message_['data'].decode('utf-8')}")
+            # print(message_['data'].decode('utf-8'), 'I am here!')
             # print(f"all clients{clients}")
             for client_socket in clients:
                 if client_socket != notified_socket:
-                    client_socket.send(user['header'] + user['data'] + message_['header'] + message_['data'])
+                    if soundMessage: 
+                        client_socket.send(message_[1])
+                    else:
+                        client_socket.send(user['header'] + user['data'] + message_['header'] + message_['data'])
     for notified_socket in exception_sockets:
         sockets_list.remove(notified_socket)
         del clients[notified_socket]

@@ -210,9 +210,13 @@ class Ui_appWindow(QThread):
         self.bufferSize = 1024
         soundMessage = '$ou#+'
         message = (soundMessage + ' ' + str(clickedButton)).encode('utf-8')
-        # self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.client.UDPClientSocket.sendto(message, self.serverAddressPort)
-        # self.UDPClientSocket.sendto(message, self.serverAddressPort)
+
+        if self.TCPcheckBox.isChecked():
+            self.client.TCPclientSocket.send(message)
+            print('i received the message TCP')
+        else: 
+            self.client.UDPClientSocket.sendto(message, self.serverAddressPort)
+            
         print(f'Id of the clicked sound button: {clickedButton}')
         
     def connect(self):
@@ -410,7 +414,13 @@ class Client(QThread):
         try:
         #this is where I receive things
             # FOR USERNAME
+            # print(sock.recv(1024), 'right here!')
+            # return 
+            soundMessage = False 
             self.otherUserNamesHeader = sock.recv(self.HEADER_LENGTH)
+            if '$ou#+' in self.otherUserNamesHeader.decode('utf-8'):
+                self.trigger.emit(self.otherUserNamesHeader.decode('utf-8'))
+                return 
             if not len(self.otherUserNamesHeader):
                 ui.chat_window.insertPlainText("connection closed by the server")
                 sys.exit()
@@ -424,6 +434,7 @@ class Client(QThread):
             message = sock.recv(lengthOfMessage)  # reading the message using the length(header) of it
             recvd_msg = f"{self.otherUserName_s.decode('utf-8').strip()}>> {message.decode('utf-8').strip()}"
             
+            # print(recvd_msg)
             self.trigger.emit(recvd_msg)
          
 

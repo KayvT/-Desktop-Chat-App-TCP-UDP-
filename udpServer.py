@@ -45,11 +45,6 @@ while(True):
     # message
     address = bytesAddressPair[1]
 
-    # if message.decode('utf-8').startswith('$ou#+'):
-        # print(message)
-        # continue
-    
-
 
     exists = False
     for c in clients: 
