@@ -3,7 +3,9 @@ import socket
 
  
 
-localIP = "10.52.3.25"
+# localIP = "10.52.3.25"
+localIP = "127.0.0.1"
+
 
 localPort   = 20001
 

@@ -15,11 +15,13 @@ import select
 import sys
 from soundwindow import Ui_MainWindow
 
+
 class Ui_appWindow(QThread):
 
     def __init__(self):
         super(Ui_appWindow, self).__init__()
         self.uiElements()
+
     def uiElements(self):
         appWindow.setObjectName("appWindow")
         appWindow.resize(686, 468)
@@ -35,7 +37,8 @@ class Ui_appWindow(QThread):
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(510, 340, 171, 81))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
-        self.verticalLayout.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
+        self.verticalLayout.setSizeConstraint(
+            QtWidgets.QLayout.SetNoConstraint)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -44,6 +47,7 @@ class Ui_appWindow(QThread):
         self.verticalLayout.addWidget(self.soundBTN)
         self.sendFileBTN = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.sendFileBTN.setObjectName("sendFileBTN")
+        
         self.verticalLayout.addWidget(self.sendFileBTN)
         self.sendBTN = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.sendBTN.setObjectName("sendBTN")
@@ -51,7 +55,8 @@ class Ui_appWindow(QThread):
         self.input_area = QtWidgets.QLineEdit(self.centralwidget)
         self.input_area.setGeometry(QtCore.QRect(10, 340, 491, 81))
         self.input_area.setText("")
-        self.input_area.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.input_area.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.input_area.setCursorMoveStyle(QtCore.Qt.LogicalMoveStyle)
         self.input_area.setClearButtonEnabled(False)
         self.input_area.setObjectName("input_area")
@@ -171,18 +176,27 @@ class Ui_appWindow(QThread):
         self.soundBTN.clicked.connect(self.open_sound_window)
         self.sendFileBTN.clicked.connect(self.open_fileDialog)
 
+        #STYLES: 
+        self.connectBTN.setStyleSheet(":hover:!pressed{background-color: blue}")
+        self.soundBTN.setStyleSheet(":hover:!pressed{background-color: green}")
+        self.sendBTN.setStyleSheet(":hover:!pressed{background-color: green}")
+        self.sendFileBTN.setStyleSheet(":hover:!pressed{background-color: green}")
+
+
     def retranslateUi(self, appWindow):
         _translate = QtCore.QCoreApplication.translate
         appWindow.setWindowTitle(_translate("appWindow", "MainWindow"))
         self.soundBTN.setText(_translate("appWindow", "SOUND"))
         self.sendFileBTN.setText(_translate("appWindow", "BROWSE"))
         self.sendBTN.setText(_translate("appWindow", "SEND"))
-        self.input_area.setPlaceholderText(_translate("appWindow", "Type your message here!"))
+        self.input_area.setPlaceholderText(
+            _translate("appWindow", "Type your message here!"))
         self.chat_label.setText(_translate("appWindow", "CHAT ROOM"))
         self.room_label.setText(_translate("appWindow", "OPTIONS"))
         self.label.setText(_translate("appWindow", "HOST ADDRESS"))
         self.connectBTN.setText(_translate("appWindow", "CONNECT"))
-        self.load_bar.setStatusTip(_translate("appWindow", "Loading bar: will start loading when you click connect"))
+        self.load_bar.setStatusTip(_translate(
+            "appWindow", "Loading bar: will start loading when you click connect"))
         self.label_2.setText(_translate("appWindow", "PICK THE PROTOCOL:"))
         self.nameLabel.setText(_translate("appWindow", "YOUR USERNAME"))
         self.TCPcheckBox.setText(_translate("appWindow", "TCP"))
@@ -214,17 +228,18 @@ class Ui_appWindow(QThread):
         if self.TCPcheckBox.isChecked():
             self.client.TCPclientSocket.send(message)
             print('i received the message TCP')
-        else: 
+        else:
             self.client.UDPClientSocket.sendto(message, self.serverAddressPort)
-            
+
         print(f'Id of the clicked sound button: {clickedButton}')
-        
+
     def connect(self):
-        #to make sure the user is not just clicking connect without typing in info.
+        # to make sure the user is not just clicking connect without typing in info.
         while (not self.IpInput_area.text() and not self.NameInput_area.text()) and (self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True):
             pop_up_msg = QtWidgets.QMessageBox()
             pop_up_msg.setWindowTitle("Come on, really?")
-            pop_up_msg.setText("You cannot do that. You have to enter a name, an Ip, and check one of the protocols.")
+            pop_up_msg.setText(
+                "You cannot do that. You have to enter a name, an Ip, and check one of the protocols.")
             pop_up_msg.setIcon(QtWidgets.QMessageBox.Warning)
             pop_up_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             pop_up_msg.exec_()
@@ -245,7 +260,7 @@ class Ui_appWindow(QThread):
             while self.completed < 100:
                 self.completed += 0.00015
                 self.load_bar.setValue(self.completed)
-            #getting the values:
+            # getting the values:
             hostIp = self.IpInput_area.text()
             hostName = self.NameInput_area.text()
             # the following lines are to make sure the user does not crash the application by changing his optins and clicking connect again.
@@ -262,15 +277,16 @@ class Ui_appWindow(QThread):
             self.NameInput_area.setReadOnly(True)
             self.load_bar.setValue(0)
             self.load_bar.setTextVisible(False)
-            #actually connecting is done here
+            # actually connecting is done here
             #### changes #####
             self.client = Client(hostName, hostIp, checked)
             self.client.startConnection()
-            self.client.start() # starting the threads
-            self.client.trigger.connect(self.connect_slots) # connecting to the signal of the client
+            self.client.start()  # starting the threads
+            # connecting to the signal of the client
+            self.client.trigger.connect(self.connect_slots)
 
     def connect_slots(self, receivedMessage):
-        
+
         playSound = False
         if '$ou#+' in receivedMessage:
             soundNumber = receivedMessage.split(' ')[-1]
@@ -279,79 +295,81 @@ class Ui_appWindow(QThread):
         ui.chat_window.insertPlainText(receivedMessage)
         ui.chat_window.insertPlainText("\n")
         ui.chat_window.repaint()
-        if playSound: 
+        if playSound:
             soundFile = os.path.join(os.getcwd(), f'SOUNDS/{soundNumber}.mp3')
             playsound(soundFile)
 
-
-
     def open_fileDialog(self):
-        name, _ = QFileDialog.getOpenFileName(appWindow, "Open File", options=QFileDialog.DontUseNativeDialog)
+        name, _ = QFileDialog.getOpenFileName(
+            appWindow, "Open File", options=QFileDialog.DontUseNativeDialog)
+
 
 class Client(QThread):
     """ signal the client uses to send the received message
         to the GUI then, the GUI inserts the message 
     """
-    trigger = pyqtSignal(str) 
+    trigger = pyqtSignal(str)
     HEADER_LENGTH = 10
     # self.Gui = Ui_appWindow()
+
     def __init__(self, name, ip, checkbox):
         super(Client, self).__init__()
         self.requestedIp = ip
         self.user_name = name
         self.checkboxState = checkbox
         self.PORT = 5000
-    
+
     def startConnection(self):
         if self.checkboxState.text() == "TCP":
             # threading._start_new_thread(self.TCPserverInit, (self.requestedIp, ' '))
             self.TCPserverInit(self.requestedIp, 4)
         else:
-            #UDP CODE HERE
+            # UDP CODE HERE
             self.UDPserverInit()
 
     def UDPserverInit(self):
 
-        #TODO may send the names first here
+        # TODO may send the names first here
         self.serverAddressPort = ("10.52.3.25", 20001)
         self.bufferSize = 1024
         # Create a UDP socket at client side
-        self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        self.UDPClientSocket = socket.socket(
+            family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
-        #send names first (to be added to clients list)
-        self.UDPClientSocket.sendto(str.encode(self.user_name), self.serverAddressPort)
-
+        # send names first (to be added to clients list)
+        self.UDPClientSocket.sendto(str.encode(
+            self.user_name), self.serverAddressPort)
 
         welcome_ = f"You are connected, {self.user_name}! Start Messaging!! \n -Reach Chat App Assistant \n ---------------------------------------------------------------\n"
         ui.chat_window.insertPlainText(welcome_)
         ui.sendBTN.clicked.connect(self.sendBTN_handle)
-        
+
         #######  My changes  ########
-        """ send message when enter is pressed """ 
+        """ send message when enter is pressed """
         ui.input_area.returnPressed.connect(self.sendBTN_handle)
 
         ui.chat_window.repaint()
 
         ###########################
 
-    
-        
     def TCPserverInit(self, ip, var_):
         # self.my_username = input("Type in your username: ")
-        self.TCPclientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.TCPclientSocket = socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM)
         self.TCPclientSocket.connect((ip, self.PORT))
         self.TCPclientSocket.setblocking(False)
         self.encoded_username = self.user_name.encode('utf-8')
-        self.username_header = f"{len(self.encoded_username):<{self.HEADER_LENGTH}}".encode('utf-8')
-        
+        self.username_header = f"{len(self.encoded_username):<{self.HEADER_LENGTH}}".encode(
+            'utf-8')
+
         self.TCPclientSocket.send(self.username_header + self.encoded_username)
         welcome_ = f"You are connected, {self.user_name}! Start Messaging!! \n -Reach Chat App Assistant \n ---------------------------------------------------------------\n"
 
         ui.chat_window.insertPlainText(welcome_)
         ui.sendBTN.clicked.connect(self.sendBTN_handle)
-        
+
         #######  My changes  ########
-        """ send message when enter is pressed """ 
+        """ send message when enter is pressed """
         ui.input_area.returnPressed.connect(self.sendBTN_handle)
 
         ui.chat_window.repaint()
@@ -362,14 +380,15 @@ class Client(QThread):
         if self.checkboxState.text() == "TCP":
             while True:
                 self.receiveMessage(self.TCPclientSocket)
-        else: 
-            while True: 
+        else:
+            while True:
                 self.receiveMessageUDP()
+
     def sendBTN_handle(self):
-          
-        if self.checkboxState.text() == "TCP":      
+
+        if self.checkboxState.text() == "TCP":
             self.TCPcommunicate_msgs(self.TCPclientSocket, ' ')
-        elif self.checkboxState.text() == "UDP":      
+        elif self.checkboxState.text() == "UDP":
             self.udpSending()
         ui.input_area.clear()
         ui.chat_window.repaint()
@@ -383,27 +402,26 @@ class Client(QThread):
             ui.chat_window.insertPlainText(own_chat_text)
             ui.chat_window.insertPlainText("\n")
             ui.chat_window.repaint()
+
     def TCPcommunicate_msgs(self, sock, var_):
         self.unEncodedMessage = ui.input_area.text()
         if self.unEncodedMessage:
             self.message = self.unEncodedMessage.encode('utf-8')
-            self.message_header = f"{len(self.message):<{self.HEADER_LENGTH}}".encode('utf-8')
+            self.message_header = f"{len(self.message):<{self.HEADER_LENGTH}}".encode(
+                'utf-8')
             sock.send(self.message_header + self.message)
 
             own_chat_text = self.user_name + ">>" + self.unEncodedMessage
             ui.chat_window.insertPlainText(own_chat_text)
             ui.chat_window.insertPlainText("\n")
-        
+
             ###### My changes #######
             """ repainting the widget after appending text to it """
             ui.chat_window.repaint()
 
             #########################
 
-       
         # self.receiveMessage(sock) # receive messages from the server of the other clients
-        
-
     def receiveMessageUDP(self):
         msgFromServer = self.UDPClientSocket.recvfrom(self.bufferSize)
         decodedMessage = msgFromServer[0].decode('utf-8')
@@ -412,31 +430,34 @@ class Client(QThread):
 
     def receiveMessage(self, sock):
         try:
-        #this is where I receive things
+            # this is where I receive things
             # FOR USERNAME
             # print(sock.recv(1024), 'right here!')
-            # return 
-            soundMessage = False 
+            # return
+            soundMessage = False
             self.otherUserNamesHeader = sock.recv(self.HEADER_LENGTH)
             if '$ou#+' in self.otherUserNamesHeader.decode('utf-8'):
                 self.trigger.emit(self.otherUserNamesHeader.decode('utf-8'))
-                return 
+                return
             if not len(self.otherUserNamesHeader):
-                ui.chat_window.insertPlainText("connection closed by the server")
+                ui.chat_window.insertPlainText(
+                    "connection closed by the server")
                 sys.exit()
-            self.otherUserNamesLength = int(self.otherUserNamesHeader.decode('utf-8').strip())
+            self.otherUserNamesLength = int(
+                self.otherUserNamesHeader.decode('utf-8').strip())
 
             #######  My changes  ########
 
-            self.otherUserName_s = sock.recv(self.otherUserNamesLength) 
-            message_header = sock.recv(self.HEADER_LENGTH) # message header
-            lengthOfMessage = int(message_header.decode('utf-8').strip()) # length of the message
-            message = sock.recv(lengthOfMessage)  # reading the message using the length(header) of it
+            self.otherUserName_s = sock.recv(self.otherUserNamesLength)
+            message_header = sock.recv(self.HEADER_LENGTH)  # message header
+            lengthOfMessage = int(message_header.decode(
+                'utf-8').strip())  # length of the message
+            # reading the message using the length(header) of it
+            message = sock.recv(lengthOfMessage)
             recvd_msg = f"{self.otherUserName_s.decode('utf-8').strip()}>> {message.decode('utf-8').strip()}"
-            
+
             # print(recvd_msg)
             self.trigger.emit(recvd_msg)
-         
 
             #########################
         except IOError as e:
@@ -448,15 +469,13 @@ class Client(QThread):
             print('General Error: ', str(e))
             sys.exit()
 
-  
-
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
+    # app.setStyle('QtCurve')
     # app.setWindowTitle("Reach ChatApp")
     appWindow = QtWidgets.QMainWindow()
     ui = Ui_appWindow()
     ui.start()
     sys.exit(app.exec_())
-
