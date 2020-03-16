@@ -473,7 +473,8 @@ class Client(QThread):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    # app.setStyle('QtCurve')
+    app.setStyle('Fusion') 
+    print(QtWidgets.QStyleFactory.keys())
     # app.setWindowTitle("Reach ChatApp")
     appWindow = QtWidgets.QMainWindow()
     ui = Ui_appWindow()
