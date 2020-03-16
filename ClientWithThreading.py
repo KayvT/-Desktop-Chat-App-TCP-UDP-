@@ -288,7 +288,6 @@ class Ui_appWindow(QThread):
             self.load_bar.setValue(0)
             self.load_bar.setTextVisible(False)
             # actually connecting is done here
-            #### changes #####
             self.client = Client(hostName, hostIp, checked)
             self.client.startConnection()
             self.client.start()  # starting the threads
@@ -320,7 +319,6 @@ class Client(QThread):
     """
     trigger = pyqtSignal(str)
     HEADER_LENGTH = 10
-    # self.Gui = Ui_appWindow()
 
     def __init__(self, name, ip, checkbox):
         super(Client, self).__init__()
@@ -331,10 +329,8 @@ class Client(QThread):
 
     def startConnection(self):
         if self.checkboxState.text() == "TCP":
-            # threading._start_new_thread(self.TCPserverInit, (self.requestedIp, ' '))
             self.TCPserverInit(self.requestedIp, 4)
         else:
-            # UDP CODE HERE
             self.UDPserverInit()
 
     def UDPserverInit(self):
@@ -354,16 +350,13 @@ class Client(QThread):
         ui.chat_window.insertPlainText(welcome_)
         ui.sendBTN.clicked.connect(self.sendBTN_handle)
 
-        #######  My changes  ########
         """ send message when enter is pressed """
         ui.input_area.returnPressed.connect(self.sendBTN_handle)
 
         ui.chat_window.repaint()
 
-        ###########################
 
     def TCPserverInit(self, ip, var_):
-        # self.my_username = input("Type in your username: ")
         self.TCPclientSocket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)
         self.TCPclientSocket.connect((ip, self.PORT))
@@ -378,13 +371,11 @@ class Client(QThread):
         ui.chat_window.insertPlainText(welcome_)
         ui.sendBTN.clicked.connect(self.sendBTN_handle)
 
-        #######  My changes  ########
         """ send message when enter is pressed """
         ui.input_area.returnPressed.connect(self.sendBTN_handle)
 
         ui.chat_window.repaint()
 
-        ###########################
 
     def run(self):
         if self.checkboxState.text() == "TCP":
@@ -425,13 +416,10 @@ class Client(QThread):
             ui.chat_window.insertPlainText(own_chat_text)
             ui.chat_window.insertPlainText("\n")
 
-            ###### My changes #######
             """ repainting the widget after appending text to it """
             ui.chat_window.repaint()
 
-            #########################
 
-        # self.receiveMessage(sock) # receive messages from the server of the other clients
     def receiveMessageUDP(self):
         msgFromServer = self.UDPClientSocket.recvfrom(self.bufferSize)
         decodedMessage = msgFromServer[0].decode('utf-8')
@@ -440,10 +428,7 @@ class Client(QThread):
 
     def receiveMessage(self, sock):
         try:
-            # this is where I receive things
-            # FOR USERNAME
-            # print(sock.recv(1024), 'right here!')
-            # return
+
             soundMessage = False
             self.otherUserNamesHeader = sock.recv(self.HEADER_LENGTH)
             if '$ou#+' in self.otherUserNamesHeader.decode('utf-8'):
@@ -456,8 +441,6 @@ class Client(QThread):
             self.otherUserNamesLength = int(
                 self.otherUserNamesHeader.decode('utf-8').strip())
 
-            #######  My changes  ########
-
             self.otherUserName_s = sock.recv(self.otherUserNamesLength)
             message_header = sock.recv(self.HEADER_LENGTH)  # message header
             lengthOfMessage = int(message_header.decode(
@@ -466,10 +449,8 @@ class Client(QThread):
             message = sock.recv(lengthOfMessage)
             recvd_msg = f"{self.otherUserName_s.decode('utf-8').strip()}>> {message.decode('utf-8').strip()}"
 
-            # print(recvd_msg)
             self.trigger.emit(recvd_msg)
 
-            #########################
         except IOError as e:
             if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
                 print('Reading error: ', str(e))
@@ -484,8 +465,6 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle('Fusion') 
-    print(QtWidgets.QStyleFactory.keys())
-    # app.setWindowTitle("Reach ChatApp")
     appWindow = QtWidgets.QMainWindow()
     ui = Ui_appWindow()
     ui.start()
