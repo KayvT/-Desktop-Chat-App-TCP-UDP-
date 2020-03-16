@@ -150,13 +150,15 @@ class Ui_appWindow(QThread):
         self.statusBar = QtWidgets.QStatusBar(appWindow)
         self.statusBar.setObjectName("statusBar")
         appWindow.setStatusBar(self.statusBar)
+        # ACTIONS:
         self.actionExit = QtWidgets.QAction(appWindow)
         self.actionExit.setObjectName("actionExit")
-        self.actionHome = QtWidgets.QAction(appWindow)
-        self.actionHome.setObjectName("actionHome")
+        self.actionExit.triggered.connect(self.quitWindow)
+
         self.actionAboutUS = QtWidgets.QAction(appWindow)
         self.actionAboutUS.setObjectName("actionAboutUS")
-        self.menuFile.addAction(self.actionHome)
+        self.actionAboutUS.triggered.connect(self.InfoAboutUs)
+
         self.menuFile.addAction(self.actionExit)
         self.menu_About.addAction(self.actionAboutUS)
         self.menubar.addAction(self.menuFile.menuAction())
@@ -204,14 +206,22 @@ class Ui_appWindow(QThread):
         self.menuFile.setTitle(_translate("appWindow", "&File"))
         self.menu_About.setTitle(_translate("appWindow", "&About"))
         self.actionExit.setText(_translate("appWindow", "&Exit"))
-        self.actionHome.setText(_translate("appWindow", "&Home"))
         self.actionAboutUS.setText(_translate("appWindow", "&US"))
         appWindow.setWindowTitle("Reach ChatApp")
         self.sendBTN.setDisabled(True)
         self.soundBTN.setDisabled(True)
         self.sendFileBTN.setDisabled(True)
         self.input_area.setReadOnly(True)
+    def quitWindow(self):
+        sys.exit()
 
+    def InfoAboutUs(self):
+        info_pop_up_msg = QtWidgets.QMessageBox()
+        info_pop_up_msg.setWindowTitle("Who are we?")
+        info_pop_up_msg.setText("Reach ChatApp was developed by 2 Egyptian Friends in Istanbul Sehir University. It was done as practice of sockets programming, Pyqt5, and finally signals and threads. We hope you like this app, because we really loved making it!")
+        info_pop_up_msg.setIcon(QtWidgets.QMessageBox.Information)
+        info_pop_up_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        info_pop_up_msg.exec_()
     def open_sound_window(self):
         self.window = QtWidgets.QMainWindow()
         self.soundUI = Ui_MainWindow()
