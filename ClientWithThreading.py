@@ -17,7 +17,6 @@ from soundwindow import Ui_MainWindow
 
 
 class Ui_appWindow(QThread):
-
     def __init__(self):
         super(Ui_appWindow, self).__init__()
         self.uiElements()
@@ -179,10 +178,11 @@ class Ui_appWindow(QThread):
         self.sendFileBTN.clicked.connect(self.open_fileDialog)
 
         #STYLES: 
-        self.connectBTN.setStyleSheet(":hover:!pressed{background-color: blue}")
-        self.soundBTN.setStyleSheet(":hover:!pressed{background-color: green}")
-        self.sendBTN.setStyleSheet(":hover:!pressed{background-color: green}")
-        self.sendFileBTN.setStyleSheet(":hover:!pressed{background-color: green}")
+        self.connectBTN.setStyleSheet(":hover:!pressed{background-color: lawngreen}")
+        self.soundBTN.setStyleSheet(":hover:!pressed{background-color: lightgreen}")
+        self.sendBTN.setStyleSheet(":hover:!pressed{background-color: lightgreen}")
+        self.sendFileBTN.setStyleSheet(":hover:!pressed{background-color: lightgreen}")
+
 
 
     def retranslateUi(self, appWindow):
@@ -212,6 +212,7 @@ class Ui_appWindow(QThread):
         self.soundBTN.setDisabled(True)
         self.sendFileBTN.setDisabled(True)
         self.input_area.setReadOnly(True)
+
     def quitWindow(self):
         sys.exit()
 
@@ -319,6 +320,7 @@ class Client(QThread):
     """
     trigger = pyqtSignal(str)
     HEADER_LENGTH = 10
+    
 
     def __init__(self, name, ip, checkbox):
         super(Client, self).__init__()
@@ -326,7 +328,7 @@ class Client(QThread):
         self.user_name = name
         self.checkboxState = checkbox
         self.PORT = 5000
-
+        
     def startConnection(self):
         if self.checkboxState.text() == "TCP":
             self.TCPserverInit(self.requestedIp, 4)
