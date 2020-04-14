@@ -23,7 +23,6 @@ sockets_list = [server_socket] #since we already have the server socket as a soc
 clients = {} #this is just to be able to print the user names and stuff in a better way so we will have the socket as a key and the user data as a value.
 
 def recv_message(client_socket):
-    
     # soundMessage = client_socket.recv().decode('utf-8')
     # if '$ou#+' in soundMessage:
     #     print(soundMessage, 'Break it is a sound!!!!!')

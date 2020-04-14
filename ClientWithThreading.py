@@ -270,7 +270,6 @@ class Ui_appWindow(QThread):
             self.client.trigger.connect(self.connect_slots) # connecting to the signal of the client
 
     def connect_slots(self, receivedMessage):
-        
         playSound = False
         if '$ou#+' in receivedMessage:
             soundNumber = receivedMessage.split(' ')[-1]
