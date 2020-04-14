@@ -243,7 +243,7 @@ class Ui_appWindow(QThread):
         elif self.futureTime > time.time():
             pop_up_msg = QtWidgets.QMessageBox()
             pop_up_msg.setWindowTitle("Too many clicks")
-            pop_up_msg.setText("You sent too much. Wait for 10 seconds from...")
+            pop_up_msg.setText("You sent too many. Wait for 10 seconds...")
             pop_up_msg.setIcon(QtWidgets.QMessageBox.Warning)
             pop_up_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             pop_up_msg.exec_()
