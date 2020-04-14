@@ -31,7 +31,7 @@ UDPServerSocket.bind((localIP, localPort))
 
  
 
-print("UDP server up and listening")
+print("UDP server up and listening...")
 
  
 #list of clients 
@@ -64,10 +64,8 @@ while(True):
         if c[1] == address[1]:
             name = clients[address]
 
-   
 
     # Sending a reply to client
-    print(clients)
     for c in clients:
         if c[1] != address[1]:
             UDPServerSocket.sendto(name + b'>>' + message, c)

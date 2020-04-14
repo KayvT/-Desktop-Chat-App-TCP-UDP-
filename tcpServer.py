@@ -60,7 +60,6 @@ while True:
             soundMessage = False 
             if type(message_) == tuple and message_[0] == 'sound':
                 soundMessage = True
-                print('here send the clients the sound')
             elif message_ is False:
                 print(f"Closed connection from {clients[notified_socket]['data'].decode('utf-8')}")
                 sockets_list.remove(notified_socket)

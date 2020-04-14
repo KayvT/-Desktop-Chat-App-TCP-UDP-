@@ -2,7 +2,8 @@
 # from PyQt5.QtCore import QObject, pyqtSignal
 from playsound import playsound
 import os
-
+import time
+from datetime import datetime
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
@@ -20,7 +21,10 @@ class Ui_appWindow(QThread):
     def __init__(self):
         super(Ui_appWindow, self).__init__()
         self.uiElements()
-
+        self.soundCounter = 0
+        self.currentTime = None
+        self.futureTime = 0
+        self.timerStarted = True
     def uiElements(self):
         appWindow.setObjectName("appWindow")
         appWindow.resize(686, 468)
@@ -231,22 +235,43 @@ class Ui_appWindow(QThread):
         self.soundUI.trigger.connect(self.soundButtonClicked)
 
     def soundButtonClicked(self, clickedButton):
-        self.serverAddressPort = ("10.52.3.25", 20001)
+        
+        if self.soundCounter > 5 and self.timerStarted:
+            self.currentTime = time.time()
+            self.timerStarted = False
+            self.futureTime = self.currentTime + 10
+        elif self.futureTime > time.time():
+            pop_up_msg = QtWidgets.QMessageBox()
+            pop_up_msg.setWindowTitle("Too many clicks")
+            pop_up_msg.setText("You sent too much. Wait for 10 seconds from...")
+            pop_up_msg.setIcon(QtWidgets.QMessageBox.Warning)
+            pop_up_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            pop_up_msg.exec_()
+            return 
+        elif self.futureTime < time.time() and not self.timerStarted: 
+            self.soundCounter = 0
+            self.timerStarted = True
+            
+
+        self.soundCounter += 1
+        try: 
+            self.serverAddressPort = (self.hostIp, 20001)
+        except: 
+            self.serverAddressPort = ('127.0.0.1', 20001)
         self.bufferSize = 1024
         soundMessage = '$ou#+'
         message = (soundMessage + ' ' + str(clickedButton)).encode('utf-8')
 
         if self.TCPcheckBox.isChecked():
             self.client.TCPclientSocket.send(message)
-            print('i received the message TCP')
         else:
             self.client.UDPClientSocket.sendto(message, self.serverAddressPort)
 
-        print(f'Id of the clicked sound button: {clickedButton}')
-
     def connect(self):
-        # to make sure the user is not just clicking connect without typing in info.
-        while (not self.IpInput_area.text() and not self.NameInput_area.text()) and (self.TCPcheckBox.isChecked() != True or self.UDPcheckBox.isChecked() != True):
+        # to make sure the user is not just clicking connect without typing in info.      
+        while  (not (self.TCPcheckBox.isChecked() or self.UDPcheckBox.isChecked()) or not(self.IpInput_area.text() and self.NameInput_area.text()) or ( self.TCPcheckBox.isChecked() and  self.UDPcheckBox.isChecked())):
+            # print(self.TCPcheckBox.isChecked())
+            # print((not self.TCPcheckBox.isChecked() or  not self.UDPcheckBox.isChecked()))
             pop_up_msg = QtWidgets.QMessageBox()
             pop_up_msg.setWindowTitle("Come on, really?")
             pop_up_msg.setText(
@@ -255,45 +280,46 @@ class Ui_appWindow(QThread):
             pop_up_msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             pop_up_msg.exec_()
             if pop_up_msg.buttonClicked:
-                break
+                return
+                
+                # return 
+    
+        if self.TCPcheckBox.isChecked():
+            checked = self.TCPcheckBox
+            print("whoop, TCP connection!")
         else:
-            if self.TCPcheckBox.isChecked():
-                checked = self.TCPcheckBox
-                print("whoop, TCP connection!")
-            else:
-                checked = self.UDPcheckBox
-
-                print('UDP connection')
-                # quit()
-                # i do not need to check if atleast one of them is checked already because I have already done that in the while loop.
-            self.load_bar.setTextVisible(True)
-            self.completed = 0
-            while self.completed < 100:
-                self.completed += 0.00015
-                self.load_bar.setValue(self.completed)
-            # getting the values:
-            hostIp = self.IpInput_area.text()
-            hostName = self.NameInput_area.text()
-            # the following lines are to make sure the user does not crash the application by changing his optins and clicking connect again.
-            self.connectBTN.setDisabled(True)
-            self.sendBTN.setDisabled(False)
-            self.soundBTN.setDisabled(False)
-            self.sendFileBTN.setDisabled(False)
-            self.TCPcheckBox.setDisabled(True)
-            self.UDPcheckBox.setDisabled(True)
-            self.input_area.setReadOnly(False)
-            self.IpInput_area.clear()
-            self.IpInput_area.setReadOnly(True)
-            self.NameInput_area.clear()
-            self.NameInput_area.setReadOnly(True)
-            self.load_bar.setValue(0)
-            self.load_bar.setTextVisible(False)
-            # actually connecting is done here
-            self.client = Client(hostName, hostIp, checked)
-            self.client.startConnection()
-            self.client.start()  # starting the threads
-            # connecting to the signal of the client
-            self.client.trigger.connect(self.connect_slots)
+            checked = self.UDPcheckBox
+            print('UDP connection')
+            # quit()
+            # i do not need to check if atleast one of them is checked already because I have already done that in the while loop.
+        self.load_bar.setTextVisible(True)
+        self.completed = 0
+        while self.completed < 100:
+            self.completed += 0.00015
+            self.load_bar.setValue(self.completed)
+        # getting the values:
+        self.hostIp = self.IpInput_area.text()
+        hostName = self.NameInput_area.text()
+        # the following lines are to make sure the user does not crash the application by changing his optins and clicking connect again.
+        self.connectBTN.setDisabled(True)
+        self.sendBTN.setDisabled(False)
+        self.soundBTN.setDisabled(False)
+        self.sendFileBTN.setDisabled(False)
+        self.TCPcheckBox.setDisabled(True)
+        self.UDPcheckBox.setDisabled(True)
+        self.input_area.setReadOnly(False)
+        self.IpInput_area.clear()
+        self.IpInput_area.setReadOnly(True)
+        self.NameInput_area.clear()
+        self.NameInput_area.setReadOnly(True)
+        self.load_bar.setValue(0)
+        self.load_bar.setTextVisible(False)
+        # actually connecting is done here
+        self.client = Client(hostName, self.hostIp, checked)
+        self.client.startConnection()
+        self.client.start()  # starting the threads
+        # connecting to the signal of the client
+        self.client.trigger.connect(self.connect_slots)
 
     def connect_slots(self, receivedMessage):
         playSound = False
@@ -301,6 +327,7 @@ class Ui_appWindow(QThread):
             soundNumber = receivedMessage.split(' ')[-1]
             receivedMessage = f'Sound number {soundNumber} was played!!'
             playSound = True
+        receivedMessage = f'{receivedMessage}  ({datetime.fromtimestamp(int(time.time())).strftime("%H:%M")})'
         ui.chat_window.insertPlainText(receivedMessage)
         ui.chat_window.insertPlainText("\n")
         ui.chat_window.repaint()
@@ -332,12 +359,17 @@ class Client(QThread):
         if self.checkboxState.text() == "TCP":
             self.TCPserverInit(self.requestedIp, 4)
         else:
-            self.UDPserverInit()
+            self.UDPserverInit(self.requestedIp)
 
-    def UDPserverInit(self):
+    def UDPserverInit(self, ip):
 
         # TODO may send the names first here
-        self.serverAddressPort = ("10.52.3.25", 20001)
+        try:
+            self.serverAddressPort = (ip, 20001)
+        except: 
+            self.serverAddressPort = ("127.0.0.1", 20001)
+            # raise('Please provide a ')
+            exit() 
         self.bufferSize = 1024
         # Create a UDP socket at client side
         self.UDPClientSocket = socket.socket(
@@ -360,7 +392,11 @@ class Client(QThread):
     def TCPserverInit(self, ip, var_):
         self.TCPclientSocket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)
-        self.TCPclientSocket.connect((ip, self.PORT))
+        try: 
+            self.TCPclientSocket.connect((ip, self.PORT))
+        except: 
+            self.TCPclientSocket.connect(("127.0.0.1", self.PORT))
+            
         self.TCPclientSocket.setblocking(False)
         self.encoded_username = self.user_name.encode('utf-8')
         self.username_header = f"{len(self.encoded_username):<{self.HEADER_LENGTH}}".encode(
