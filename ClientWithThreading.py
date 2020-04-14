@@ -364,20 +364,21 @@ class Client(QThread):
     def UDPserverInit(self, ip):
 
         # TODO may send the names first here
-        try:
-            self.serverAddressPort = (ip, 20001)
-        except: 
-            self.serverAddressPort = ("127.0.0.1", 20001)
-            # raise('Please provide a ')
-            exit() 
+
         self.bufferSize = 1024
         # Create a UDP socket at client side
         self.UDPClientSocket = socket.socket(
             family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
-        # send names first (to be added to clients list)
-        self.UDPClientSocket.sendto(str.encode(
-            self.user_name), self.serverAddressPort)
+        try:
+            self.serverAddressPort = (ip, 20001)
+                  # send names first (to be added to clients list)
+            self.UDPClientSocket.sendto(str.encode(self.user_name), self.serverAddressPort)
+        except: 
+            self.serverAddressPort = ("127.0.0.1", 20001)
+            self.UDPClientSocket.sendto(str.encode(self.user_name), self.serverAddressPort)
+
+  
 
         welcome_ = f"You are connected, {self.user_name}! Start Messaging!! \n -Reach Chat App Assistant \n ---------------------------------------------------------------\n"
         ui.chat_window.insertPlainText(welcome_)
@@ -437,6 +438,7 @@ class Client(QThread):
             self.message = self.unEncodedMessage.encode('utf-8')
             self.UDPClientSocket.sendto(self.message, self.serverAddressPort)
             own_chat_text = self.user_name + ">>" + self.unEncodedMessage
+            own_chat_text = f'{own_chat_text}  ({datetime.fromtimestamp(int(time.time())).strftime("%H:%M")})'
             ui.chat_window.insertPlainText(own_chat_text)
             ui.chat_window.insertPlainText("\n")
             ui.chat_window.repaint()
@@ -449,7 +451,8 @@ class Client(QThread):
                 'utf-8')
             sock.send(self.message_header + self.message)
 
-            own_chat_text = self.user_name + ">>" + self.unEncodedMessage
+            own_chat_text = self.user_name + ">>" + self.unEncodedMessag
+            own_chat_text = f'{own_chat_text}  ({datetime.fromtimestamp(int(time.time())).strftime("%H:%M")})'
             ui.chat_window.insertPlainText(own_chat_text)
             ui.chat_window.insertPlainText("\n")
 
