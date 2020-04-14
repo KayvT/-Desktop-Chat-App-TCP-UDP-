@@ -451,7 +451,7 @@ class Client(QThread):
                 'utf-8')
             sock.send(self.message_header + self.message)
 
-            own_chat_text = self.user_name + ">>" + self.unEncodedMessag
+            own_chat_text = self.user_name + ">>" + self.unEncodedMessage
             own_chat_text = f'{own_chat_text}  ({datetime.fromtimestamp(int(time.time())).strftime("%H:%M")})'
             ui.chat_window.insertPlainText(own_chat_text)
             ui.chat_window.insertPlainText("\n")
