@@ -4,7 +4,8 @@ from playsound import playsound
 import os
 import time
 from datetime import datetime
-
+import json
+import ast
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -15,6 +16,7 @@ import errno
 import select
 import sys
 from soundwindow import Ui_MainWindow
+import requests
 
 
 class Ui_appWindow(QThread):
@@ -24,7 +26,7 @@ class Ui_appWindow(QThread):
         self.soundCounter = 0
         self.currentTime = None
         self.futureTime = 0
-        self.timerStarted = True
+        self.timerStarted = True    
     def uiElements(self):
         appWindow.setObjectName("appWindow")
         appWindow.resize(686, 468)
@@ -57,7 +59,7 @@ class Ui_appWindow(QThread):
         self.verticalLayout.addWidget(self.sendBTN)
         self.input_area = QtWidgets.QLineEdit(self.centralwidget)
         self.input_area.setGeometry(QtCore.QRect(10, 340, 491, 81))
-        self.input_area.setText("")
+        self.input_area.setText("") 
         self.input_area.setAlignment(
             QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.input_area.setCursorMoveStyle(QtCore.Qt.LogicalMoveStyle)
@@ -70,7 +72,7 @@ class Ui_appWindow(QThread):
         self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_2.setObjectName("line_2")
         self.chat_window = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.chat_window.setGeometry(QtCore.QRect(10, 40, 491, 281))
+        self.chat_window.setGeometry(QtCore.QRect(10, 40, 491, 251))
         self.chat_window.setTabChangesFocus(False)
         self.chat_window.setReadOnly(True)
         self.chat_window.setObjectName("chat_window")
@@ -173,6 +175,17 @@ class Ui_appWindow(QThread):
         self.nameLabel = QtWidgets.QLabel(self.centralwidget)
         self.nameLabel.setGeometry(QtCore.QRect(530, 60, 131, 17))
         self.nameLabel.setObjectName("nameLabel")
+        self.Download_CancelBTN = QtWidgets.QPushButton(self.centralwidget)
+        self.Download_CancelBTN.setGeometry(QtCore.QRect(180, 300, 151, 21))
+        self.Download_CancelBTN.setObjectName("Download_CancelBTN")
+        self.Download_CancelBTN.setVisible(False)
+        self.Download_CancelBTN.clicked.connect(lambda x: self.client.handleDownloadCancelBTN(self.Download_CancelBTN))
+        self.FileName = QtWidgets.QLabel(self.centralwidget)
+        self.FileName.setGeometry(QtCore.QRect(40, 290, 171, 41))
+        self.FileName.setObjectName("FileName")
+        self.LoadingSpeed = QtWidgets.QLabel(self.centralwidget)
+        self.LoadingSpeed.setGeometry(QtCore.QRect(350, 300, 300, 20))
+        self.LoadingSpeed.setObjectName("LoadingSpeed")
         appWindow.show()
         self.retranslateUi(appWindow)
         QtCore.QMetaObject.connectSlotsByName(appWindow)
@@ -195,8 +208,8 @@ class Ui_appWindow(QThread):
         self.soundBTN.setText(_translate("appWindow", "SOUND"))
         self.sendFileBTN.setText(_translate("appWindow", "BROWSE"))
         self.sendBTN.setText(_translate("appWindow", "SEND"))
-        self.input_area.setPlaceholderText(
-            _translate("appWindow", "Type your message here!"))
+        # self.LoadingSpeed.setText("300 kb/s")
+        self.input_area.setPlaceholderText(_translate("appWindow", "Type your message here!"))
         self.chat_label.setText(_translate("appWindow", "CHAT ROOM"))
         self.room_label.setText(_translate("appWindow", "OPTIONS"))
         self.label.setText(_translate("appWindow", "HOST ADDRESS"))
@@ -265,13 +278,13 @@ class Ui_appWindow(QThread):
         if self.TCPcheckBox.isChecked():
             self.client.TCPclientSocket.send(message)
         else:
+            ###### TODO CHANGE THIS 
+            self.serverAddressPort = ('127.0.0.1', 20001)
             self.client.UDPClientSocket.sendto(message, self.serverAddressPort)
 
     def connect(self):
         # to make sure the user is not just clicking connect without typing in info.      
         while  (not (self.TCPcheckBox.isChecked() or self.UDPcheckBox.isChecked()) or not(self.IpInput_area.text() and self.NameInput_area.text()) or ( self.TCPcheckBox.isChecked() and  self.UDPcheckBox.isChecked())):
-            # print(self.TCPcheckBox.isChecked())
-            # print((not self.TCPcheckBox.isChecked() or  not self.UDPcheckBox.isChecked()))
             pop_up_msg = QtWidgets.QMessageBox()
             pop_up_msg.setWindowTitle("Come on, really?")
             pop_up_msg.setText(
@@ -327,6 +340,23 @@ class Ui_appWindow(QThread):
             soundNumber = receivedMessage.split(' ')[-1]
             receivedMessage = f'Sound number {soundNumber} was played!!'
             playSound = True
+        elif 'clearFileUI' in receivedMessage:
+            self.FileName.setText('')
+            self.Download_CancelBTN.setText('')
+            self.LoadingSpeed.setText('')
+            self.Download_CancelBTN.setVisible(False)
+            self.LoadingSpeed.setVisible(False)
+            return
+        elif '$file$l#' in receivedMessage:
+            self.FileName.setText(receivedMessage.split('-')[-1])
+            self.Download_CancelBTN.setText('Download')
+            self.Download_CancelBTN.setVisible(True)
+            self.LoadingSpeed.setVisible(True)
+            return 
+        elif 'updateRate' in receivedMessage:
+            s =  receivedMessage.split('-')[1]
+            self.LoadingSpeed.setText(s)
+            return 
         receivedMessage = f'{receivedMessage}  ({datetime.fromtimestamp(int(time.time())).strftime("%H:%M")})'
         ui.chat_window.insertPlainText(receivedMessage)
         ui.chat_window.insertPlainText("\n")
@@ -336,8 +366,17 @@ class Ui_appWindow(QThread):
             playsound(soundFile)
 
     def open_fileDialog(self):
-        name, _ = QFileDialog.getOpenFileName(
+        file_, _ = QFileDialog.getOpenFileName(
             appWindow, "Open File", options=QFileDialog.DontUseNativeDialog)
+        chosenFileName = file_.split('/')[-1]
+        self.FileName.setText(chosenFileName)
+        self.Download_CancelBTN.setVisible(True)
+        self.Download_CancelBTN.setText('Cancel')
+        self.LoadingSpeed.setVisible(True)
+        if  self.TCPcheckBox.isChecked():
+            self.client.sendFileTCP(chosenFileName)
+        else: 
+            self.client.sendFileUDP(chosenFileName)
 
 
 class Client(QThread):
@@ -346,14 +385,15 @@ class Client(QThread):
     """
     trigger = pyqtSignal(str)
     HEADER_LENGTH = 10
-    
-
     def __init__(self, name, ip, checkbox):
         super(Client, self).__init__()
         self.requestedIp = ip
         self.user_name = name
         self.checkboxState = checkbox
         self.PORT = 5000
+        self.filename = None
+        self.metadata = None
+        # self.gui = Ui_appWindow()
         
     def startConnection(self):
         if self.checkboxState.text() == "TCP":
@@ -370,13 +410,17 @@ class Client(QThread):
         self.UDPClientSocket = socket.socket(
             family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
+        NameLengthtoSend = f'$name$#:{len(self.user_name)}'.encode('utf-8')
+        Name_toSend = self.user_name.encode('utf-8')
         try:
             self.serverAddressPort = (ip, 20001)
                   # send names first (to be added to clients list)
-            self.UDPClientSocket.sendto(str.encode(self.user_name), self.serverAddressPort)
+            self.UDPClientSocket.sendto(NameLengthtoSend, self.serverAddressPort)
+            self.UDPClientSocket.sendto(Name_toSend, self.serverAddressPort)
         except: 
             self.serverAddressPort = ("127.0.0.1", 20001)
-            self.UDPClientSocket.sendto(str.encode(self.user_name), self.serverAddressPort)
+            self.UDPClientSocket.sendto(NameLengthtoSend, self.serverAddressPort)
+            self.UDPClientSocket.sendto(Name_toSend, self.serverAddressPort)
 
   
 
@@ -435,7 +479,9 @@ class Client(QThread):
     def udpSending(self):
         self.unEncodedMessage = ui.input_area.text()
         if self.unEncodedMessage:
+            msgLengthHeader = f'$msg#{len(self.unEncodedMessage)}'
             self.message = self.unEncodedMessage.encode('utf-8')
+            self.UDPClientSocket.sendto(msgLengthHeader.encode('utf-8'), self.serverAddressPort)
             self.UDPClientSocket.sendto(self.message, self.serverAddressPort)
             own_chat_text = self.user_name + ">>" + self.unEncodedMessage
             own_chat_text = f'{own_chat_text}  ({datetime.fromtimestamp(int(time.time())).strftime("%H:%M")})'
@@ -461,19 +507,156 @@ class Client(QThread):
 
 
     def receiveMessageUDP(self):
-        msgFromServer = self.UDPClientSocket.recvfrom(self.bufferSize)
-        decodedMessage = msgFromServer[0].decode('utf-8')
-        if len(decodedMessage.strip()) > 0:
-            self.trigger.emit(decodedMessage)
+        message_header = self.UDPClientSocket.recvfrom(10)
+        msg =  message_header[0].decode('utf-8')
+        if not msg: return
+         
+        if '$msg#' in msg:
+            msgLength = int(message_header[0].decode('utf-8').split('#')[1])
+            message = self.UDPClientSocket.recvfrom(msgLength)
+            self.trigger.emit(message[0].decode('utf-8'))
+        elif '$ou#+' in msg:
+            self.trigger.emit(msg)
+        elif '$file$l#' in msg:
+            lengName = int(msg.split('#')[-1])
+            self.filename = self.UDPClientSocket.recvfrom(lengName)[0].decode('utf-8')
+            self.trigger.emit(msg+'-'+self.filename)
+            clean = self.UDPClientSocket.recvfrom(10)[0].decode('utf-8').split('#')[0]
+            print(f'The file {self.filename} is {clean}')
+        elif '$cancelDd$' in msg:
+            self.trigger.emit('clearFileUI')
+        elif '$acceptDd$' in msg:
+            seqNumber = 1
+            filetosend = open(self.filename, "rb")
+            data = filetosend.read(1000)
+            self.UDPClientSocket.sendto('filep:    '.encode('utf-8'), self.serverAddressPort)
+            self.UDPClientSocket.sendto(f'{seqNumber}'.encode(), self.serverAddressPort)
+            self.UDPClientSocket.sendto(data, self.serverAddressPort)
+            bytesSend = 0
+            now = time.time()
+            t = int(now % 60)
+            while data:
+                print(f"Sending packet: {seqNumber}")
+                bytesSend += len(data) * 8
+                t = time.time() - t 
+                self.trigger.emit(f'updateRate-{round(bytesSend/t, 5)} bits/s')
+                print(f'updateRate-{round(bytesSend/t, 5)} bits/s')
+                time.sleep(.2)
+                data = filetosend.read(1000)
+                seqNumber += 1
+                self.UDPClientSocket.sendto(f'{seqNumber}'.encode(), self.serverAddressPort)
+                self.UDPClientSocket.sendto(data, self.serverAddressPort)
+
+            filetosend.close()
+            self.trigger.emit('clearFileUI')
+            print("Done Sending.")
+        
+        elif '$fileData$' in msg:
+            bytesSend = 0
+            now = time.time()
+            t = int(now % 60)
+            packets = []
+            seq_num = self.UDPClientSocket.recvfrom(50)
+            data = self.UDPClientSocket.recvfrom(1000)
+            while True:
+                print(f"Receving Packet: {seq_num[0].decode()}")
+                if '$#end^$'.encode('utf-8') in data[0]:
+                    packets.append((seq_num[0], data[0]))
+                    break
+                bytesSend += len(data) * 8
+                t = time.time() - t 
+                self.trigger.emit(f'updateRate-{round(bytesSend/t, 5)} bits/s')
+                print(f'updateRate-{round(bytesSend/t, 5)} bits/s')
+                time.sleep(.2)
+                packets.append((seq_num[0], data[0]))
+                seq_num = self.UDPClientSocket.recvfrom(50)
+                data = self.UDPClientSocket.recvfrom(1000)  
+
+            print("Done Receiving.")
+
+            #packet losses
+            packet_losses = int(packets[-1][0].decode()) - len(packets)
+            print(f'Packet Losses: {packet_losses}')
+            
+            #changed order
+            changed_order = 0
+            for i in range(1, len(packets)+1):
+                if int(packets[i-1][0].decode()) != i:
+                    changed_order+=1
+            print(f'Packets Changed Order: {changed_order}')
+
+            # fix changed order (to test changed order)
+            x = packets[:-1]
+            x.sort(key=lambda x: int(x[0].decode()))
+
+            #writing to the file
+            f = open(f'copy{self.filename}', 'wb')
+            for seq, pk in x:
+                f.write(pk)
+                  
+            self.trigger.emit('clearFileUI')
+
+    def handleDownloadCancelBTN(self, btn):
+        txt = btn.text()
+        if txt == 'Download':
+            if self.checkboxState.text() == 'TCP':
+                self.TCPclientSocket.send('$acceptDd$'.encode('utf-8'))
+            else: 
+                self.UDPClientSocket.sendto('$acceptDd$'.encode('utf-8'), self.serverAddressPort)
+        elif txt == 'Cancel':
+            if self.checkboxState.text() == 'TCP':
+                self.TCPclientSocket.send('$cancelDd$'.encode('utf-8'))
+                self.trigger.emit('clearFileUI')
+            else:
+                self.UDPClientSocket.sendto('$cancelDd$'.encode('utf-8'), self.serverAddressPort)
+                self.trigger.emit('clearFileUI')
+
 
     def receiveMessage(self, sock):
         try:
-
             soundMessage = False
             self.otherUserNamesHeader = sock.recv(self.HEADER_LENGTH)
             if '$ou#+' in self.otherUserNamesHeader.decode('utf-8'):
                 self.trigger.emit(self.otherUserNamesHeader.decode('utf-8'))
                 return
+            if '$file$l#' in self.otherUserNamesHeader.decode('utf-8'):
+                lengName = int(self.otherUserNamesHeader.decode('utf-8').split('#')[-1])
+                self.filename = sock.recv(lengName).decode('utf-8')
+                self.trigger.emit(self.otherUserNamesHeader.decode('utf-8')+'-'+self.filename)
+                clean = sock.recv(10).decode('utf-8').split('#')
+                print(f'The file {self.filename} is {clean[0]}')
+                #metadata 
+                lenPackets = self.TCPclientSocket.recv(10).decode().split('-')
+                read = lenPackets[1]
+                to_read = int(lenPackets[0]) - len(read) 
+                metadata = self.TCPclientSocket.recv(to_read)
+                self.metadata = ast.literal_eval(read + metadata.decode())
+                return 
+            if '$acceptDd$' in self.otherUserNamesHeader.decode('utf-8'):
+                self.startUploading(self.TCPclientSocket)
+                return 
+            if '$cancelDd$' in self.otherUserNamesHeader.decode('utf-8'):
+                self.trigger.emit('clearFileUI')
+                return 
+            if '$fileData$' in self.otherUserNamesHeader.decode('utf-8'):
+                seq_packets = []
+                dataReceived = b''
+                bytesSend = 0
+                now = time.time()
+                t = int(now % 60)
+                f = open(f'copy{self.filename}', 'wb')
+                for seq, size in self.metadata:
+                    data = sock.recv(size)
+                    bytesSend += len(data) * 8
+                    time.sleep(.1)
+                    t = time.time() - t 
+                    self.trigger.emit(f'updateRate-{round(bytesSend/t, 5)} bits/s')
+                    dataReceived += data  
+                f.write(dataReceived)
+                f.close()
+                self.trigger.emit('clearFileUI')
+                print("Done Receiving.")
+                return 
             if not len(self.otherUserNamesHeader):
                 ui.chat_window.insertPlainText(
                     "connection closed by the server")
@@ -500,7 +683,79 @@ class Client(QThread):
             print('General Error: ', str(e))
             sys.exit()
 
+    def sendFileUDP(self, filename):
+        self.filename = filename
+        self.UDPClientSocket.sendto(f'$file$l#{len(filename)}'.encode('utf-8'), self.serverAddressPort)
+        self.UDPClientSocket.sendto(self.filename.encode('utf-8'), self.serverAddressPort)
+        if self.cleanIsFile(filename):
+            self.UDPClientSocket.sendto('clean####$'.encode('utf-8'), self.serverAddressPort)
+        else: 
+            self.UDPClientSocket.sendto('notclean##'.encode('utf-8'), self.serverAddressPort)
 
+
+    def sendFileTCP(self, filename):
+        self.filename = filename
+        self.TCPclientSocket.send((f'$file$l#{len(filename)}').encode('utf-8'))
+        self.TCPclientSocket.send(filename.encode('utf-8'))
+        if self.cleanIsFile(filename):
+            self.TCPclientSocket.send('clean####$'.encode('utf-8'))
+        else: 
+            self.TCPclientSocket.send('notclean##'.encode('utf-8'))
+        #send metadata 
+        packets = []
+        seqNumber = 1
+        filetosend = open(self.filename, "rb")
+        data = filetosend.read(1000)
+        while data:
+            packets.append((seqNumber, len(data)))
+            data = filetosend.read(1000)
+            seqNumber+=1
+        filetosend.close()
+        self.TCPclientSocket.send(f'{len(str(packets))}-'.encode())
+        self.TCPclientSocket.send(f'{packets}'.encode())
+
+    def cleanIsFile(self, filename):
+        url = 'https://www.virustotal.com/vtapi/v2/file/scan'
+        params = {'apikey':'59a867cceeef5a71ecdb5d49cfdad284ca89fe086b0a141693c3849485d46f22'}
+        f = {'file': (filename, open(filename, 'rb'))}
+        response = requests.post(url, files=f, params=params)
+        return response.json()['response_code']
+
+    def startUploading(self, sock):
+        # divide data into packets 
+        packets = {}
+        seqNumber = 1
+        filetosend = open(self.filename, "rb")
+        data = filetosend.read(1000)
+
+        if self.checkboxState.text() == "TCP":
+            sock.send('filep:    '.encode('utf-8'))
+        else:
+            sock.sendto('filep:    '.encode('utf-8'), self.serverAddressPort)
+      
+        sock.send(data)
+        bytesSend = 0
+        now = time.time()
+        t = int(now % 60)
+        while data:
+            print("Sending...")
+            sock.send(data)
+            bytesSend += len(data) * 8
+            t = time.time() - t 
+            self.trigger.emit(f'updateRate-{round(bytesSend/t, 5)} bits/s')
+            print(f'updateRate-{round(bytesSend/t, 5)} bits/s')
+            time.sleep(.1)
+            packets[seqNumber] = data
+            data = filetosend.read(1000)
+            seqNumber += 1
+
+        # for pk in packets:
+            # print('length of packet', len(packets[pk]), 'seqNum:', pk)
+            # print(packets[pk])
+        filetosend.close()
+        self.trigger.emit('clearFileUI')
+        print("Done Sending.")
+    
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
