@@ -509,8 +509,7 @@ class Client(QThread):
     def receiveMessageUDP(self):
         message_header = self.UDPClientSocket.recvfrom(10)
         msg =  message_header[0].decode('utf-8')
-        if not msg: return
-         
+        if not msg: return 
         if '$msg#' in msg:
             msgLength = int(message_header[0].decode('utf-8').split('#')[1])
             message = self.UDPClientSocket.recvfrom(msgLength)

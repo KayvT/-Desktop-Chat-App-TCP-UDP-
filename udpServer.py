@@ -1,8 +1,9 @@
 
 import socket
+import time
 # localIP = "10.52.3.25"
-localIP = "127.0.0.1"
-# localIP = '25.135.227.60'
+# localIP = "127.0.0.1"
+localIP = '25.135.227.60'
 localPort   = 20001
 bufferSize  = 1000
 
@@ -42,6 +43,7 @@ def sendToClients(typeOfMessage, address, message, clients):
                 #skipping the first packet
                 for seq, pk in message[1:]:
                     UDPServerSocket.sendto(seq, c)
+                    time.sleep(.5)
                     UDPServerSocket.sendto(pk, c)
 
 #list of clients 
