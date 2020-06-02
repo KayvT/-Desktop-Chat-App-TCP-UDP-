@@ -2,8 +2,8 @@
 import socket
 import time
 # localIP = "10.52.3.25"
-# localIP = "127.0.0.1"
-localIP = '25.135.227.60'
+localIP = "127.0.0.1"
+# localIP = '25.135.227.60'
 localPort   = 20001
 bufferSize  = 1000
 

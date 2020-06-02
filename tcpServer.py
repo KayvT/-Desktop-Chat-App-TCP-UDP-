@@ -6,8 +6,8 @@ import ast
 HEADER_LENGTH = 10
 
 # IP = "10.52.3.25"
-# IP = "127.0.0.1"
-IP = '25.135.227.60'
+IP = "127.0.0.1"
+# IP = '25.135.227.60'
 PORT = 5000
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) ## just opening the socket for the server.
@@ -41,7 +41,6 @@ def recv_message(client_socket, metadata):
             while data_size > 0:
 
                 data = client_socket.recv(1000)
-                print(data_size, data)
                 dataList.append(data)
                 data_size -= len(data)
 

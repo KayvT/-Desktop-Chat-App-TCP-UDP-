@@ -558,10 +558,10 @@ class Client(QThread):
             seq_num = self.UDPClientSocket.recvfrom(50)
             data = self.UDPClientSocket.recvfrom(1000)
             while True:
-                print(f"Receving Packet: {seq_num[0].decode()}")
                 if '$#end^$'.encode('utf-8') in data[0]:
                     packets.append((seq_num[0], data[0]))
                     break
+                print(f"Receving Packet: {seq_num[0].decode()}, data: {data}")
                 bytesSend += len(data) * 8
                 t = time.time() - t 
                 self.trigger.emit(f'updateRate-{round(bytesSend/t, 5)} bits/s')
@@ -630,6 +630,7 @@ class Client(QThread):
                 to_read = int(lenPackets[0]) - len(read) 
                 metadata = self.TCPclientSocket.recv(to_read)
                 self.metadata = ast.literal_eval(read + metadata.decode())
+                # print(f'metadata: {self.metadata}')
                 return 
             if '$acceptDd$' in self.otherUserNamesHeader.decode('utf-8'):
                 self.startUploading(self.TCPclientSocket)
@@ -646,6 +647,7 @@ class Client(QThread):
                 f = open(f'copy{self.filename}', 'wb')
                 for seq, size in self.metadata:
                     data = sock.recv(size)
+                    print(f'Sequence Number: {seq}, Size: {size}, Data: {data}')
                     bytesSend += len(data) * 8
                     time.sleep(.1)
                     t = time.time() - t 
@@ -655,6 +657,7 @@ class Client(QThread):
                 f.close()
                 self.trigger.emit('clearFileUI')
                 print("Done Receiving.")
+                print(f'Number of packets received: {len(self.metadata)}')
                 return 
             if not len(self.otherUserNamesHeader):
                 ui.chat_window.insertPlainText(
@@ -737,7 +740,7 @@ class Client(QThread):
         now = time.time()
         t = int(now % 60)
         while data:
-            print("Sending...")
+            print(f"Sending packet: {seqNumber}")
             sock.send(data)
             bytesSend += len(data) * 8
             t = time.time() - t 
